@@ -6,13 +6,13 @@ from PIL import Image
 
 # Load your Keras model
 try:
-    model = load_model('model.h5')
+    model = load_model('model1.keras')
 except Exception as e:
     st.error(f"Error loading model: {e}")
 
 # Function to preprocess the image/frame and make predictions
 def preprocess_image(image):
-    image = image.resize((300, 300))  # Example resize, adjust as needed
+    image = image.resize((128, 128))  # Example resize, adjust as needed
     image_array = np.array(image) / 255.0  # Normalize if needed
     image_array = np.expand_dims(image_array, axis=0)  # Add batch dimension
     return image_array
