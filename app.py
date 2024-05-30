@@ -48,7 +48,7 @@ if mode == 'Real-Time Classification':
     else:
         st.info(f"Found {num_cameras} camera(s). Using camera index 0.")
 
-    cap = cv2.VideoCapture(-1)
+    cap = cv2.VideoCapture()
 
     while run:
         ret, frame = cap.read()
