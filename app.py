@@ -1,8 +1,9 @@
 import streamlit as st
-import cv2
+from streamlit_webrtc import VideoTransformerBase, webrtc_streamer
 import numpy as np
 from tensorflow.keras.models import load_model
 from PIL import Image
+import cv2
 
 # Load your Keras model
 try:
@@ -22,6 +23,17 @@ def predict(image):
     prediction = model.predict(processed_image)
     return prediction
 
+class VideoTransformer(VideoTransformerBase):
+    def transform(self, frame):
+        image = frame.to_image()
+        image = image.convert("RGB")
+        image = np.array(image)
+        image = cv2.resize(image, (300, 300))  # Resize to match the model's input size
+        prediction = predict(Image.fromarray(image))
+        result = "Prediction: " + class_names[np.argmax(prediction)]
+        cv2.putText(image, result, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+        return image
+
 # Streamlit app
 st.title("Can Classifier")
 st.write("This app classifies cans as defective or non-defective.")
@@ -31,43 +43,8 @@ mode = st.radio("Choose a mode:", ('Real-Time Classification', 'Upload Picture')
 class_names = ["Non-Defective", "Defective"]  # Adjust according to your model's classes
 
 if mode == 'Real-Time Classification':
-    run = st.checkbox('Run')
-    FRAME_WINDOW = st.image([])
-
-    # Check available cameras
-    num_cameras = 0
-    while True:
-        cap = cv2.VideoCapture(num_cameras)
-        if not cap.isOpened():
-            break
-        cap.release()
-        num_cameras += 1
-
-    if num_cameras == 0:
-        st.error("No camera detected.")
-    else:
-        st.info(f"Found {num_cameras} camera(s). Using camera index 0.")
-
-    cap = cv2.VideoCapture(-1)
-
-    while run:
-        ret, frame = cap.read()
-        if not ret:
-            st.write("Failed to capture frame from camera. Please check your camera device.")
-            break
-
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        prediction = predict(Image.fromarray(frame))
-        result = class_names[np.argmax(prediction)]
-
-        # Display the result on the frame
-        cv2.putText(frame, f"Prediction: {result}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
-
-        FRAME_WINDOW.image(frame)
-
-    cap.release()
-
-elif mode == 'Upload Picture':
+    st.write("Real-Time Classification is not supported in this mode. Please choose 'Upload Picture' instead.")
+else:
     uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "png", "jpeg"])
 
     if uploaded_file is not None:
