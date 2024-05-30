@@ -2,11 +2,16 @@ import streamlit as st
 import cv2
 import numpy as np
 from tensorflow.keras.models import load_model
+from tensorflow.keras.optimizers import Adam
 from PIL import Image
 
-# Load your Keras model
+# Define optimizer
+optimizer = Adam(learning_rate=0.001)
+
+# Compile the model
 try:
     model = load_model('model.h5')
+    model.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['accuracy'])
 except Exception as e:
     st.error(f"Error loading model: {e}")
 
@@ -48,7 +53,7 @@ if mode == 'Real-Time Classification':
     else:
         st.info(f"Found {num_cameras} camera(s). Using camera index 0.")
 
-    cap = cv2.VideoCapture()
+    cap = cv2.VideoCapture(-1)
 
     while run:
         ret, frame = cap.read()
