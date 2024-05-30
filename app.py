@@ -1,36 +1,21 @@
-import streamlit as st
-import cv2
 import numpy as np
+import tensorflow as tf
 from tensorflow.keras.models import load_model
+from tensorflow.keras.preprocessing import image
+import streamlit as st
 from PIL import Image
-import tensorflow as tf  # Add this import
+import cv2
 
-# Load your Keras model
-try:
-    model = load_model('model.h5')
-except Exception as e:
-    st.error(f"Error loading model: {e}")
-
-# Function to preprocess the image/frame and make predictions
-def preprocess_image(image):
-    image = image.resize((300, 300))  # Example resize, adjust as needed
-    image_array = np.array(image) / 255.0  # Normalize if needed
-    image_array = np.expand_dims(image_array, axis=0)  # Add batch dimension
-    return image_array
-
-def predict(image):
-    processed_image = preprocess_image(image)
-    prediction = model.predict(processed_image)
-    return prediction
-
-# Function to preprocess the image and make predictions
-def preprocess_and_predict(image):
-    image = image.resize((300, 300))  # Adjust target_size as needed
-    image = tf.keras.preprocessing.image.img_to_array(image)
-    image = np.expand_dims(image, axis=0)
-    prediction = model.predict(image)
-    result = 'Defective' if prediction[0][0] > 0.5 else 'Non-Defective'  # Adjust the condition as needed
-    return result
+def predict_image(filepath):
+    model = load_model('model.h5')  # Pastikan path ini sesuai dengan lokasi model Anda
+    img = image.load_img(filepath, target_size=(300, 300))
+    img_array = image.img_to_array(img)
+    img_array = np.expand_dims(img_array, axis=0) / 255.0
+    prediction = model.predict(img_array)
+    if prediction[0][0] <= 0.5:
+        return 'Cacat'
+    else:
+        return 'Normal'
 
 # Streamlit app
 st.title("Can Classifier")
@@ -77,15 +62,24 @@ if mode == 'Real-Time Classification':
 
     cap.release()
 
-elif mode == 'Upload Picture':
+st.title('Klasifikasi Kaleng: Cacat atau Tidak')
+
+mode = st.sidebar.selectbox("Mode", ["Upload Picture"])
+
+if mode == 'Upload Picture':
     uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "png", "jpeg"])
 
     if uploaded_file is not None:
-        image = Image.open(uploaded_file)
-        st.image(image, caption='Uploaded Image.', use_column_width=True)
+        img = Image.open(uploaded_file)
+        st.image(img, caption='Uploaded Image.', use_column_width=True)
         st.write("")
         st.write("Classifying...")
 
-        result = preprocess_and_predict(image)
+        # Simpan gambar yang diunggah ke file sementara
+        temp_filepath = 'temp_image.png'
+        img.save(temp_filepath)
 
-        st.write(f"The can is **{result}**.")
+        # Prediksi gambar
+        result = predict_image(temp_filepath)
+
+        st.write(f"The can is {result}.")
