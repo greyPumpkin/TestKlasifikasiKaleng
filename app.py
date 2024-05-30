@@ -34,6 +34,20 @@ if mode == 'Real-Time Classification':
     run = st.checkbox('Run')
     FRAME_WINDOW = st.image([])
 
+    # Check available cameras
+    num_cameras = 0
+    while True:
+        cap = cv2.VideoCapture(num_cameras)
+        if not cap.isOpened():
+            break
+        cap.release()
+        num_cameras += 1
+
+    if num_cameras == 0:
+        st.error("No camera detected.")
+    else:
+        st.info(f"Found {num_cameras} camera(s). Using camera index 0.")
+
     cap = cv2.VideoCapture(0)
 
     while run:
